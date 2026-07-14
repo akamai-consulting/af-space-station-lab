@@ -260,8 +260,8 @@ Just like before, we have to grant our component structural permission to use th
     "current_inventory": {
       "item":"Quantum-Fuel",
       "timestamp":"2026-07-14T15:31:02.879Z"
-      }
-      }
+    }
+  }
   ```
 
 ---
