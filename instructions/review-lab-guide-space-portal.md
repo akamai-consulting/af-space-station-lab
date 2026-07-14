@@ -158,7 +158,24 @@ Just like before, we have to grant our component structural permission to use th
    ```toml
    key_value_stores = ["default"]
    ```
-3. Return to `src/index.ts`. Let's add two final routes right above the `app.fire()` statement to **store** cargo and **inspect** what is saved inside the vault:
+3. For the kv to work it needs to be included as a dependency. At this stage package.json doesn't include it. Make sure you are in the space-portal directory, your application, and run:
+  ```bash
+    npm install @spinframework/spin-kv
+  ```
+  Notice that the dependencies have updated to look like:
+  ```json
+  "dependencies": {
+    "@spinframework/build-tools": "^1.0.4",
+    "@spinframework/spin-kv": "^1.0.1",
+    "@spinframework/wasi-http-proxy": "^1.0.0",
+    "hono": "^4.7.4"
+  }
+  ```
+4. Return to `src/index.ts` and lets import our Kv
+  ```typescript
+  import * as Kv from "@spinframework/spin-kv";
+  ```
+5. Still in `src/index.ts`. Let's add two final routes right above the `app.fire()` statement to **store** cargo and **inspect** what is saved inside the vault:
 
    ```typescript
    // ROUTE 3: Load Cargo into the Vault
@@ -198,7 +215,27 @@ Just like before, we have to grant our component structural permission to use th
    });
    ```
 
-4. Save your files.
+6. Save your files.
+7. Test
+  ```bash
+  spin build
+  spin up
+  curl 'http://127.0.0.1:3000/load-cargo?item=Quantum-Fuel'
+  ```
+
+  Expected output:
+  ```
+  📦 Successfully locked [Quantum-Fuel] inside the ship's storage vault!
+  ```
+
+  ```bash
+  curl http://127.0.0.1:3000/check-vault
+  ```
+
+  Expected output:
+  ```json
+  {"vault_status":"Secured","current_inventory":{"item":"Quantum-Fuel","timestamp":"2026-07-14T15:31:02.879Z"}}
+  ```
 
 ---
 
