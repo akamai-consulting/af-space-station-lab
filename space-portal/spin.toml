@@ -1,0 +1,22 @@
+spin_manifest_version = 2
+
+[application]
+authors = ["Pedro Costa <pcosta@akamai.com>"]
+description = "A beginner friendly Akamai Functions Space Lab"
+name = "space-portal"
+version = "0.1.0"
+
+[[trigger.http]]
+route = "/..."
+component = "space-portal"
+
+[component.space-portal]
+source = "dist/space-portal.wasm"
+exclude_files = ["**/node_modules"]
+allowed_outbound_hosts = [
+    "http://api.open-notify.org:80"
+    ]
+key_value_stores = ["default"]
+[component.space-portal.build]
+command = ["npm install", "npm run build"]
+watch = ["src/**/*.ts"]

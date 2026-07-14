@@ -24,20 +24,16 @@ Before writing our custom control systems, we need to generate the basic structu
 1. Open your computer's terminal or command prompt application.
 2. Run the following command to create a brand new TypeScript project layout from a template:
    ```bash
-   spin new
+   spin new -t http-ts space-portal
+   Description: A beginner friendly Akamai Functions Space Lab
+   HTTP path: /...
+   HTTP Router: hono
    ```
-3. select http-empty
-4. Name the application space-portal
-5. Description: "A beginner friendly Akamai Functions Space Lab"
-6. Move into your new project directory:
+3. Move into your new project directory:
    ```bash
    cd space-portal
    ```
-7. Open this project folder inside your preferred code editor (such as Visual Studio Code).
-
-### Empty project
-
-
+4. Open this project folder inside your preferred code editor (such as Visual Studio Code).
 
 ### 🔍 Understanding the Blueprint
 
@@ -60,7 +56,6 @@ Right now, your application contains templates. Let's configure it to greet any 
 
    ```typescript
    import { Hono } from "hono";
-   import { Kv } from "@fermyon/spin-sdk";
 
    const app = new Hono();
 
@@ -75,6 +70,17 @@ Right now, your application contains templates. Let's configure it to greet any 
    ```
 
 4. Save your file.
+5. Test
+  ```bash
+  spin build
+  spin up
+  curl 'http://127.0.0.1:3000'
+  ```
+
+  Expected output:
+  ```
+  🛰️ Welcome to the Intergalactic Edge Space Station, Cadet!
+  ```
 
 ---
 
@@ -118,6 +124,24 @@ To achieve this, we request data from an external tracking API (`api.open-notify
    ```
 
 5. Save your updates.
+6. Test
+  ```bash
+  spin build
+  spin up
+  curl 'http://127.0.0.1:3000/locate-iss'
+  ```
+
+  Expected output:
+  ```json
+  {
+    "status": "📡 Connection Stable!",
+    "message": "Probe intercepted the real-world ISS location!",
+    "coordinates": {
+      "longitude": "-41.2690",
+      "latitude": "-39.4434"
+    }
+  }
+  ```
 
 ---
 

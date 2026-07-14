@@ -6,6 +6,10 @@ version = "0.1.0"
 authors = ["Astronaut Cadet"]
 description = "A beginner friendly Akamai Functions Space Lab"
 
+[variables]
+example_api_url = { default = "https://example.invalid/api" }
+example_api_key = { default = "fake-example-key" }
+
 [[trigger.http]]
 route = "/..."
 component = "space-portal"
