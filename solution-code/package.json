@@ -20,6 +20,7 @@
   "dependencies": {
     "@fermyon/spin-sdk": "^3.2.0",
     "@spinframework/build-tools": "^1.0.4",
+    "@spinframework/spin-kv": "^1.0.1",
     "@spinframework/wasi-http-proxy": "^1.0.0",
     "hono": "^4.12.27",
     "itty-router": "^5.0.18"
