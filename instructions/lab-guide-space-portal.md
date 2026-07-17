@@ -26,7 +26,10 @@ Before writing our mission control systems, we need to generate the basic struct
 1. Open your computer's terminal or command prompt application.
 2. Run the following command to create a brand new TypeScript project layout from a template:
    ```bash
-   spin new -t http-ts space-portal --accept-defaults
+   spin new -t http-ts space-portal
+   Description: A beginner friendly Akamai Functions Space Lab
+   HTTP path: /...
+   HTTP Router: hono --> IMPORTANT!
    ```
 3. Move into your new project directory:
    ```bash
@@ -39,7 +42,16 @@ Before writing our mission control systems, we need to generate the basic struct
 Look at the files inside your project directory. As a beginner, you only need to focus on two distinct structural points:
 
 - `spin.toml`: The **Mission Manifest**. This configuration file tells Akamai what permissions, network access routes, and secure storage your application is allowed to handle.
-- `src/index.ts`: The **Mission Control Center**. This is the main file where you will write your TypeScript code for orchestrating the cargo mission.
+- `src/index.ts`: The **Mission Control Center**. This is the main file where you will write your TypeScript code for orchestrating the cargo mission. We use Hono, a modern, lightweight routing tool that maps custom URLs to blocks of executable code.
+
+### ✅ Verify Project Initialization
+
+Confirm these files exist in your project:
+
+- `spin.toml` (configuration file)
+- `src/index.ts` (main TypeScript file)
+- `package.json` (Node.js dependencies)
+- `tsconfig.json` (TypeScript configuration)
 
 ---
 
@@ -49,13 +61,18 @@ Right now, your application contains templates. Let's configure it to greet miss
 
 ### 📋 Participant Instructions:
 
-1. Open the `src/index.ts` file in your editor.
-2. Erase everything inside it so you start completely fresh.
-3. Paste the following code block to establish **Hono**, a modern routing tool that maps custom URLs to blocks of executable code:
+1. **Install All Dependencies**: Make sure all packages are installed:
+
+   ```bash
+   npm install
+   ```
+
+2. Open the `src/index.ts` file in your editor.
+3. Erase everything inside it so you start completely fresh.
+4. Paste the following code block to set up your first route:
 
    ```typescript
    import { Hono } from "hono";
-   import * as Kv from "@spinframework/spin-kv";
 
    const app = new Hono();
 
@@ -69,7 +86,41 @@ Right now, your application contains templates. Let's configure it to greet miss
    app.fire();
    ```
 
-4. Save your file.
+5. Save your file.
+
+### ✅ Testing Phase 2: Verify Your First Route
+
+Let's test that your Mission Control interface is working correctly:
+
+2. **Build the Application**: Compile your TypeScript code into WebAssembly:
+
+   ```bash
+   spin build
+   ```
+
+   This should complete without errors.
+
+3. **Start the Local Server**: Launch your application locally:
+
+   ```bash
+   spin up
+   ```
+
+   The terminal will display: `Serving http://127.0.0.1:3000` (or similar)
+
+4. **Test the Welcome Route**: Execute the following curl command in the terminal:
+   ```
+   curl http://localhost:3000/
+   ```
+5. **Verify the Output**: You should see this message:
+
+   ```
+   🚀 Cargo Spaceship Mission Control - Ready for ISS supply run!
+   ```
+
+6. **Stop the Server**: In your terminal, press `CTRL + C` to stop the local server.
+
+> **Expected Result**: Your browser displays the welcome message. If you see an error, double-check that you saved your `src/index.ts` file and that the build completed successfully.
 
 ---
 
@@ -116,6 +167,47 @@ To achieve this, we request data from an external tracking API (`api.open-notify
 
 > **Note:** In Phase 5, we'll upgrade this route to integrate with our onboard Flight Computer!
 
+### ✅ Testing Phase 3: Verify ISS Tracking
+
+Let's confirm that your application can successfully reach out to the ISS tracking API:
+
+1. **Rebuild the Application**: Since you modified the code, rebuild it:
+
+   ```bash
+   spin build
+   ```
+
+2. **Start the Local Server**:
+
+   ```bash
+   spin up
+   ```
+
+3. **Test the ISS Tracking Route**: Execute the following curl command in the terminal:
+
+   ```
+   curl http://localhost:3000/locate-iss
+   ```
+
+4. **Verify the Output**: You should see a JSON response like this:
+
+   ```json
+   {
+     "status": "📡 Connection Stable!",
+     "message": "Probe intercepted the real-world ISS location!",
+     "coordinates": {
+       "latitude": "45.6789",
+       "longitude": "-123.4567"
+     }
+   }
+   ```
+
+   The coordinates will vary based on the ISS's current position!
+
+5. **Stop the Server**: Press `CTRL + C` in your terminal.
+
+> **Expected Result**: Your application fetches real-time ISS coordinates from the external API. If you see an error message about "space debris," verify that you correctly added `http://api.open-notify.org:80` to the `allowed_outbound_hosts` in your `spin.toml` file.
+
 ---
 
 ## 📦 Phase 4: Managing the Cargo Manifest (Key-Value Storage)
@@ -126,12 +218,25 @@ Just like before, we have to grant our component structural permission to use th
 
 ### 📋 Participant Instructions:
 
-1. Open your `spin.toml` file again.
-2. Directly below your `allowed_outbound_hosts` line, add this line to initialize access to the cargo manifest database:
+1. **Install the Spin Key-Value package**: Run this command to add the KV library:
+
+   ```bash
+   npm install @spinframework/spin-kv
+   ```
+
+2. Open your `src/index.ts` file and add the Key-Value import at the top, right after the Hono import:
+
+   ```typescript
+   import { Hono } from "hono";
+   import * as Kv from "@spinframework/spin-kv";
+   ```
+
+3. Open your `spin.toml` file.
+4. Directly below your `allowed_outbound_hosts` line, add this line to initialize access to the cargo manifest database:
    ```toml
    key_value_stores = ["default"]
    ```
-3. Return to `src/index.ts`. Let's add two final routes right above the `app.fire()` statement to **load** cargo items and **check** the manifest:
+5. Return to `src/index.ts`. Let's add two final routes right above the `app.fire()` statement to **load** cargo items and **check** the manifest:
 
    ```typescript
    // ROUTE 3: Load Cargo onto the Spaceship
@@ -173,7 +278,13 @@ Just like before, we have to grant our component structural permission to use th
      const vault = Kv.openDefault();
 
      // Pull the manifest data back out
-     const currentCargo = vault.getJson("manifest");
+     let currentCargo;
+     try {
+       currentCargo = vault.getJson("manifest");
+     } catch (e) {
+       // Key doesn't exist yet
+       currentCargo = null;
+     }
 
      if (!currentCargo || currentCargo.length === 0) {
        return c.text("⚠️ Warning! No cargo loaded on the spaceship!");
@@ -187,9 +298,73 @@ Just like before, we have to grant our component structural permission to use th
    });
    ```
 
-4. Save your files.
+6. Save your files.
 
 > **Pro Tip**: In a real cargo spaceship, you'd want authentication and authorization for cargo management. For this lab, we're keeping it simple to focus on the core Spin concepts!
+
+### ✅ Testing Phase 4: Verify Cargo Management
+
+Let's test that your Key-Value Store is working correctly:
+
+1. **Rebuild the Application**:
+
+   ```bash
+   spin build
+   ```
+
+2. **Start the Local Server**:
+
+   ```bash
+   spin up
+   ```
+
+3. **Check the Empty Vault**: First, verify the vault is empty:
+
+   ```
+   curl http://localhost:3000/check-vault
+   ```
+
+   You should see: `⚠️ Warning! No cargo loaded on the spaceship!`
+
+4. **Load Some Cargo**: Load a few items by visiting these URLs:
+
+   ```
+   curl http://localhost:3000/load-cargo?item=Water-Recycler
+   curl http://localhost:3000/load-cargo?item=Oxygen-Tanks
+   curl http://localhost:3000/load-cargo?item=Emergency-Rations
+   ```
+
+   Each time, you'll see a confirmation like:
+
+   ```
+   📦 Successfully loaded [Water-Recycler] onto the spaceship! Total items: 1
+   ```
+
+5. **Verify the Cargo Manifest**: Check that all items are stored:
+
+   ```
+   http://localhost:3000/check-vault
+   ```
+
+   You should see a JSON response showing all loaded items:
+
+   ```json
+   {
+     "vault_status": "Secured",
+     "total_items": 3,
+     "cargo_manifest": [
+       { "item": "Water-Recycler", "timestamp": "2026-07-17T..." },
+       { "item": "Oxygen-Tanks", "timestamp": "2026-07-17T..." },
+       { "item": "Emergency-Rations", "timestamp": "2026-07-17T..." }
+     ]
+   }
+   ```
+
+6. **Test Persistence**: Stop the server (`CTRL + C`), then start it again (`spin up`). Visit the check-vault URL again—your cargo should still be there! This proves the Key-Value Store persists data between restarts.
+
+7. **Stop the Server**: Press `CTRL + C`.
+
+> **Expected Result**: You can load cargo items and retrieve them from persistent storage. The data survives server restarts. If you're having issues, verify that `key_value_stores = ["default"]` is correctly added to your `spin.toml` file.
 
 ---
 
@@ -391,6 +566,68 @@ The two components communicate using **Local Service Chaining**—they call each
 
 2. Save all your files.
 
+### ✅ Testing Phase 5: Verify Multi-Component Integration
+
+Let's test that your Flight Computer is working and communicating with Mission Control:
+
+1. **Build Both Components**: Since we now have both TypeScript and Rust code, use Spin's build command which handles both:
+
+   ```bash
+   spin build
+   ```
+
+   You'll see output for both components:
+   - Cargo compiling the Rust Flight Computer (this may take a minute the first time)
+   - npm building the TypeScript Mission Control
+
+2. **Start the Local Server**:
+
+   ```bash
+   spin up
+   ```
+
+3. **Test the Integrated Mission Planning**: Execute the following command in the Terminal:
+
+   ```
+   curl http://localhost:3000/plan-trip-to-iss
+   ```
+
+4. **Verify the Complete Mission Report**: You should see a comprehensive JSON response like:
+
+   ```json
+   {
+     "status": "🚀 Mission Planning Complete",
+     "iss_location": {
+       "latitude": "45.6789",
+       "longitude": "-123.4567"
+     },
+     "flight_computer_report": {
+       "distanceKm": 12543.7,
+       "fuelRequired": 5268.4,
+       "status": "INTERCEPT COURSE READY"
+     },
+     "message": "Flight Computer has calculated the optimal intercept course!"
+   }
+   ```
+
+   The numbers will vary based on the ISS's current position!
+
+5. **Try to Access the Flight Computer Directly**: Execute:
+
+   ```
+   curl http://localhost:3000/flight-computer
+   ```
+
+   You should get a **404 Not Found** error—this confirms the Flight Computer is private and can only be accessed through Local Service Chaining!
+
+6. **Stop the Server**: Press `CTRL + C`.
+
+> **Expected Result**: The `/plan-trip-to-iss` route successfully chains together ISS tracking and flight calculations. The Flight Computer runs in-memory and returns navigation data. If you see errors, verify:
+>
+> - Both `http://api.open-notify.org:80` and `http://flight-computer.spin.internal` are in `allowed_outbound_hosts`
+> - The Flight Computer trigger is configured with `route = { private = true }`
+> - All Rust code compiled successfully during `spin build`
+
 ### 🧠 Understanding Local Service Chaining
 
 Notice the special URL: `http://flight-computer.spin.internal`
@@ -410,33 +647,135 @@ Notice the special URL: `http://flight-computer.spin.internal`
 
 ---
 
-## 🚀 Phase 6: Mission Launch (Testing & Deploying)
+## 🚀 Phase 6: Mission Launch (Deployment & Production Testing)
 
-Your cargo spaceship control system is fully assembled! Now it's time to test the systems locally and prepare for deployment to Akamai's global edge network.
+Your cargo spaceship control system is fully assembled and tested locally! Now it's time to deploy to Akamai's global edge network and verify it works in production.
 
 ### 📋 Participant Instructions:
 
-1. In your terminal, run this command to build and compile both your TypeScript and Rust components into high-performance WebAssembly modules:
-   ```bash
-   spin build
-   ```
-   > **Note:** This will build both the TypeScript Mission Control and the Rust Flight Computer! You'll see Cargo compiling the Rust code and npm building the TypeScript code.
-2. Once the build finishes cleanly, start your local test environment:
-   ```bash
-   spin up
-   ```
-3. Your terminal will print an address (usually `http://localhost:3000`). Open your internet browser and navigate to these endpoints to test your cargo spaceship systems:
-   - `http://localhost:3000/` (Mission Control welcome message)
-   - `http://localhost:3000/plan-trip-to-iss` (🚀 **NEW!** Full mission planning - tracks ISS, calculates intercept course and fuel requirements!)
-   - `http://localhost:3000/load-cargo?item=Water-Recycler` (Load an item onto the spaceship)
-   - `http://localhost:3000/check-vault` (View the complete cargo manifest)
+#### Deploy to Production
 
-   > **Watch the magic!** When you visit `/plan-trip-to-iss`, Mission Control fetches the real ISS position, then calls the Flight Computer via Local Service Chaining to calculate the intercept course - all happening in milliseconds!
+1. **Deploy to Akamai Functions Network**: Deploy your cargo spaceship control system globally:
 
-4. **Deploy to Production:** When you're ready for a real supply mission, press `CTRL + C` to stop the local server, and deploy your cargo spaceship control system to Akamai's global edge network:
    ```bash
    spin aka deploy
    ```
+
+   Spin will build your application and deploy it to Akamai's Function network. You'll see output showing the deployment progress and your application URL.
+
+2. **Note Your Application URL**: After deployment completes, Spin will display your application's public URL. It will look something like:
+
+   ```
+    https://50c16e20-7033-48d1-b926-9108c2227b36.fwf.app
+   ```
+
+   Copy this URL - you'll use it for testing!
+
+#### Production System Test
+
+1. **Run the Complete Production Test Suite**: Execute curl with the deployed URL (replace `YOUR-APP-URL` with your actual deployment URL):
+
+   **Test 1 - Mission Control Welcome:**
+
+   ```
+   curl https://YOUR-APP-URL/
+   ```
+
+   Expected: `🚀 Cargo Spaceship Mission Control - Ready for ISS supply run!`
+
+   **Test 2 - ISS Location Tracking (Basic):**
+
+   ```
+   curl https://YOUR-APP-URL/locate-iss
+   ```
+
+   Expected: JSON with ISS coordinates and status message.
+
+   **Test 3 - Full Mission Planning with Flight Computer:**
+
+   ```
+   curl https://YOUR-APP-URL/plan-trip-to-iss
+   ```
+
+   Expected: JSON with ISS location AND flight computer calculations (distance, fuel).
+
+   > **Watch the magic!** Your Mission Control running on Akamai's edge network fetches the ISS position, then calls the Flight Computer via Local Service Chaining to calculate the intercept course—all happening at the edge, close to your users!
+
+   **Test 4 - Load Cargo Items:**
+
+   ```
+   curl https://YOUR-APP-URL/load-cargo?item=Water-Recycler
+   curl https://YOUR-APP-URL/load-cargo?item=Oxygen-Tanks
+   curl https://YOUR-APP-URL/load-cargo?item=Emergency-Rations
+   ```
+
+   Expected: Confirmation message for each item loaded.
+
+   **Test 5 - Check Cargo Manifest:**
+
+   ```
+   curl https://YOUR-APP-URL/check-vault
+   ```
+
+   Expected: JSON showing all 3 items in the cargo manifest.
+
+   **Test 6 - Verify Flight Computer Privacy:**
+
+   ```
+   curl https://YOUR-APP-URL/flight-computer
+   ```
+
+   Expected: 404 Not Found (confirms it's private and only accessible via service chaining).
+
+### ✅ Complete System Verification Checklist
+
+Before considering your mission complete, verify:
+
+- ✅ Application successfully deployed to Akamai edge network
+- ✅ All routes return expected responses in production
+- ✅ ISS tracking fetches real-time data from the edge
+- ✅ Flight Computer calculates distance and fuel requirements
+- ✅ Cargo management stores and retrieves items globally
+- ✅ Data persists across requests and is accessible from anywhere
+- ✅ Flight Computer is private (not directly accessible)
+
+🎉 **Congratulations!** Your cargo spaceship control system is now running on Akamai's global edge network, ready to coordinate ISS supply missions from anywhere on Earth!
+
+### 🚨 Troubleshooting Common Issues
+
+**Deployment Errors:**
+
+- Ensure `spin build` completed successfully before deploying
+- Check that all dependencies are installed with `npm install`
+- Verify you're logged in to Akamai with proper credentials
+
+**Route Returns 500 Error in Production:**
+
+- Verify `allowed_outbound_hosts` includes required URLs in `spin.toml`
+- Ensure `key_value_stores = ["default"]` is in `spin.toml`
+- Check Akamai logs for detailed error messages
+
+**Flight Computer Not Responding:**
+
+- Verify `spin build` compiled both TypeScript and Rust components
+- Check that `http://flight-computer.spin.internal` is in `allowed_outbound_hosts`
+- Ensure the Flight Computer trigger has `route = { private = true }`
+
+**Cargo Data Not Persisting:**
+
+- Verify `key_value_stores = ["default"]` is configured in `spin.toml`
+- Key-Value data is scoped per application deployment
+
+#### Optional: Clean Rebuild
+
+If you encounter persistent issues, try a clean rebuild:
+
+```bash
+rm -rf dist/ node_modules/ flight-computer/target/
+npm install
+spin build
+spin aka deploy
+```
 
 ---
 
@@ -466,7 +805,7 @@ allowed_outbound_hosts = ["http://api.open-notify.org:80", "http://flight-comput
 key_value_stores = ["default"]
 
 [component.space-portal.build]
-command = "npm run build"
+command = "spin build"
 watch = ["src/**/*.ts", "package.json"]
 
 [[trigger.http]]
@@ -570,7 +909,15 @@ app.get("/load-cargo", (c) => {
 // ROUTE 4: Reading Information from the Key-Value Vault
 app.get("/check-vault", (c) => {
   const vault = Kv.openDefault();
-  const currentCargo = vault.getJson("manifest");
+
+  // Pull the manifest data back out
+  let currentCargo;
+  try {
+    currentCargo = vault.getJson("manifest");
+  } catch (e) {
+    // Key doesn't exist yet
+    currentCargo = null;
+  }
 
   if (!currentCargo || currentCargo.length === 0) {
     return c.text("⚠️ Warning! No cargo loaded on the spaceship!");
