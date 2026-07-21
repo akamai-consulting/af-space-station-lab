@@ -32,47 +32,57 @@ app.get("/locate-iss", async (c) => {
 
 // ROUTE 3: Load Cargo into the Vault
 
- app.get("/load-cargo", (c) => {
-     // Check the URL query parameter for an item name, or default to Space Biscuits
-     const cargoItem = c.req.query("item") || "Space Biscuits";
+app.get("/load-cargo", (c) => {
+  // Check the URL query parameter for an item name, or default to Space Biscuits
+  const cargoItem = c.req.query("item") || "Space Biscuits";
 
-     // Open the ship's secure vault
-     const vault = Kv.openDefault();
+  // Open the ship's secure vault
+  const vault = Kv.openDefault();
 
-     // Read existing cargo
-     let cargo = vault.getJson("manifest");
+  try {
+    // Read existing cargo
+    let cargo = vault.getJson("manifest");
 
-     // Initialize as array if it doesn't exist or isn't an array
-     if (!Array.isArray(cargo)) {
-         cargo = [];
-     }
+    // Initialize as array if it doesn't exist or isn't an array
+    if (!Array.isArray(cargo)) {
+      cargo = [];
+    }
 
-     // Appen new item
-     cargo.push({item: cargoItem, timestamp: new Date().toISOString()});
+    // Append new item
+    cargo.push({item: cargoItem, timestamp: new Date().toISOString()});
 
-     // Write back
-     vault.setJson("manifest", cargo);
+    // Write back
+    vault.setJson("manifest", cargo);
+  } catch (error) {
+    // Key doesn't exist yet, create new array
+    vault.setJson("manifest", [{item: cargoItem, timestamp: new Date().toISOString()}]);
+  }
 
-     return c.text(
-         `📦 Successfully locked [${cargoItem}] inside the ship's storage vault!`,
-     );
- });
+  return c.text(
+    `📦 Successfully locked [${cargoItem}] inside the ship's storage vault!`,
+  );
+});
 
  // ROUTE 4: Inspect the Vault
- app.get("/check-vault", (c) => {
-     const vault = Kv.openDefault();
+app.get("/check-vault", (c) => {
+  const vault = Kv.openDefault();
 
-     // Pull the item data back out of the vault
-     const currentCargo = vault.getJson("manifest");
+  try {
+    // Pull the item data back out of the vault
+    const currentCargo = vault.getJson("manifest");
 
-     if (!currentCargo) {
-     return c.text("⚠️ Warning! The storage vault is completely empty!");
-     }
+    if (!currentCargo) {
+      return c.text("⚠️ Warning! The storage vault is completely empty!");
+    }
 
-     return c.json({
-         vault_status: "Secured",
-         current_inventory: currentCargo,
-     });
- });
+    return c.json({
+      vault_status: "Secured",
+      current_inventory: currentCargo,
+    });
+  } catch (error) {
+    // Key doesn't exist yet
+    return c.text("⚠️ Warning! The storage vault is completely empty!");
+  }
+});
 
 app.fire();
