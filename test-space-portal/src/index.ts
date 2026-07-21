@@ -49,13 +49,13 @@ app.get("/load-cargo", (c) => {
     }
 
     // Append new item
-    cargo.push({item: cargoItem, timestamp: new Date().toISOString()});
+    cargo.push({ item: cargoItem, timestamp: new Date().toISOString() });
 
     // Write back
     vault.setJson("manifest", cargo);
   } catch (error) {
     // Key doesn't exist yet, create new array
-    vault.setJson("manifest", [{item: cargoItem, timestamp: new Date().toISOString()}]);
+    vault.setJson("manifest", [{ item: cargoItem, timestamp: new Date().toISOString() }]);
   }
 
   return c.text(
@@ -63,7 +63,7 @@ app.get("/load-cargo", (c) => {
   );
 });
 
- // ROUTE 4: Inspect the Vault
+// ROUTE 4: Inspect the Vault
 app.get("/check-vault", (c) => {
   const vault = Kv.openDefault();
 
@@ -82,6 +82,50 @@ app.get("/check-vault", (c) => {
   } catch (error) {
     // Key doesn't exist yet
     return c.text("⚠️ Warning! The storage vault is completely empty!");
+  }
+});
+
+// ROUTE 5: Plan Trip to ISS (with Flight Computer Integration)
+app.get("/plan-trip-to-iss", async (c) => {
+  try {
+    const response = await fetch("http://api.open-notify.org/iss-now.json");
+    const data = (await response.json()) as any;
+
+    const flightComputerResponse = await fetch(
+      "http://flight-computer.spin.internal",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          iss: {
+            latitude: parseFloat(data.iss_position.latitude),
+            longitude: parseFloat(data.iss_position.longitude),
+          },
+        }),
+      },
+    );
+
+    // Check if response is ok
+    if (!flightComputerResponse.ok) {
+      return c.text(`⚠️ Flight Computer error: ${flightComputerResponse.status}`, 500);
+    }
+
+    // Check if response has content
+    const responseText = await flightComputerResponse.text();
+    if (!responseText) {
+      return c.text("⚠️ Flight Computer returned empty response", 500);
+    }
+
+    const missionReport = JSON.parse(responseText);
+
+    return c.json({
+      status: "🚀 Mission Planning Complete",
+      iss_location: data.iss_position,
+      flight_computer_report: missionReport,
+      message: "Flight Computer has calculated the optimal intercept course!",
+    });
+  } catch (error) {
+    return c.text(`💥 Mission planning failed! Error: ${error}`, 500);
   }
 });
 

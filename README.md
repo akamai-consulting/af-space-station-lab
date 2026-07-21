@@ -341,6 +341,8 @@ The two components communicate using **Local Service Chaining**—they call each
    serde = { version = "1.0", features = ["derive"] }
    serde_json = "1.0"
    ```
+   [!NOTE]
+   The specific version of spin-sdk may differ!
 
 2. Edit `spin.toml` to make the route to the flight-computer private, so the route can only be internally accessible.
 
@@ -349,9 +351,8 @@ The two components communicate using **Local Service Chaining**—they call each
    route = { private = true }
    component = "flight-computer"
    ```
-3. 
 
-4. Open `flight-computer/src/lib.rs` and replace all the code with our navigation logic:
+3. Open `flight-computer/src/lib.rs` and replace all the code with our navigation logic:
 
    ```rust
    use spin_sdk::http::{IntoResponse, Request, Response};
@@ -437,6 +438,87 @@ The two components communicate using **Local Service Chaining**—they call each
        EARTH_RADIUS_KM * c
    }
    ```
+4. For the correct implementation, we would replace ROUTE 2 with a new route that uses the `flight-computer` component. In this case we will a new route, so add the following code to the `index.ts` of the `space-portal` bust above *app.fire()*
+
+    ```typescript
+    // ROUTE 5: Plan Trip to ISS (with Flight Computer Integration)
+    app.get("/plan-trip-to-iss", async (c) => {
+        try {
+            const response = await fetch("http://api.open-notify.org/iss-now.json");
+            const data = (await response.json()) as any;
+
+            const flightComputerResponse = await fetch(
+            "http://flight-computer.spin.internal",
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    iss: {
+                        latitude: parseFloat(data.iss_position.latitude),
+                        longitude: parseFloat(data.iss_position.longitude),
+                    },
+                }),
+            },
+        );
+
+        // Check if response is ok
+        if (!flightComputerResponse.ok) {
+            return c.text(`⚠️ Flight Computer error: ${flightComputerResponse.status}`, 500);
+        }
+
+        // Check if response has content
+        const responseText = await flightComputerResponse.text();
+        if (!responseText) {
+            return c.text("⚠️ Flight Computer returned empty response", 500);
+        }
+
+        const missionReport = JSON.parse(responseText);
+
+        return c.json({
+            status: "🚀 Mission Planning Complete",
+            iss_location: data.iss_position,
+            flight_computer_report: missionReport,
+            message: "Flight Computer has calculated the optimal intercept course!",
+        });
+    } catch (error) {
+        return c.text(`💥 Mission planning failed! Error: ${error}`, 500);
+    }
+    });
+    ```
+
+
+5. Add `http://flight-computer.spin.internal` to the *allowed_outbound_hosts*
+
+    ```bash
+    allowed_outbound_hosts = ["http://api.open-notify.org:80", "http://flight-computer.spin.internal"]
+    ```
+
+6. Save files.
+7. Test
+
+    ```bash
+    spin build
+    spin up
+    curl 'http://127.0.0.1:3000/plan-trip-to-iss'
+    ```
+
+    Expected response:
+
+    ```json
+    {
+        "status":"🚀 Mission Planning Complete",
+        "iss_location":{
+            "latitude":"-31.5362",
+            "longitude":"-58.4646"
+            },
+        "flight_computer_report":{
+            "distanceKm":7084,
+            "fuelRequired":2975.3,
+            "status":"INTERCEPT COURSE READY"
+            },
+        "message":"Flight Computer has calculated the optimal intercept course!"
+    }
+    ```
 
 ---
 
@@ -445,6 +527,8 @@ The two components communicate using **Local Service Chaining**—they call each
 Your space code is fully assembled! Now it is time to boot up the systems, test it inside your local terminal simulator, and launch it live to Akamai's global edge network.
 
 ### 📋 Phase 6: Participant Instructions
+
+Reiterating, when your application is ready you would:
 
 1. In your terminal, run this command to build and compile your TypeScript code into a high-performance WebAssembly module:
 
@@ -463,6 +547,7 @@ Your space code is fully assembled! Now it is time to boot up the systems, test 
    - `http://localhost:3000/locate-iss` (Real-time tracking coordinate probe)
    - `http://localhost:3000/load-cargo?item=Quantum-Fuel` (Saves your cargo tracking query!)
    - `http://localhost:3000/check-vault` (Reads whatever you locked in your vault)
+   - `http://127.0.0.1:3000/plan-trip-to-iss` (Plans mission to iss)
 4. **Deploy Globally:** When you're ready to show the world, press `CTRL + C` to turn off the local server, and deploy your code live to the real internet via Akamai Functions using:
 
    ```bash
@@ -478,26 +563,29 @@ If a student runs into a syntax error, structural bug, or misconfigures a setup 
 ### `spin.toml` Complete Final Blueprint
 
 ```toml
-spin_manifest_version = "2"
+spin_manifest_version = 2
 
 [application]
-authors = ["<author>"]
-description = "A beginner friendly Akamai Functions Space Lab"
-name = "space-portal"
+authors = ["Pedro Costa <pcosta@akamai.com>"]
+description = "Testing the Lab"
+name = "test-space-portal"
 version = "0.1.0"
 
 [[trigger.http]]
 route = "/..."
-component = "space-portal"
+component = "test-space-portal"
 
-[component.space-portal]
-source = "dist/space-portal.wasm"
+
+[component.test-space-portal]
+source = "dist/test-space-portal.wasm"
 exclude_files = ["**/node_modules"]
 allowed_outbound_hosts = [
-    "http://api.open-notify.org:80"
-    ]
+    # "tcp://127.0.0.1:*", # Uncomment this line to while using the StarlingMonkey Debugger
+    "http://api.open-notify.org:80",
+    "http://flight-computer.spin.internal"
+]
 key_value_stores = ["default"]
-[component.space-portal.build]
+[component.test-space-portal.build]
 command = ["npm install", "npm run build"]
 watch = ["src/**/*.ts"]
 
@@ -512,6 +600,7 @@ allowed_outbound_hosts = []
 command = "cargo build --target wasm32-wasip1 --release"
 workdir = "flight-computer"
 watch = ["src/**/*.rs", "Cargo.toml"]
+
 ```
 
 ### `cargo.toml` Complete Final Blueprint
@@ -519,7 +608,7 @@ watch = ["src/**/*.rs", "Cargo.toml"]
 ```toml
 [package]
 name = "flight-computer"
-authors = ["<author>"]
+authors = ["Pedro Costa <pcosta@akamai.com>"]
 description = ""
 version = "0.1.0"
 rust-version = "1.78"
@@ -573,6 +662,7 @@ app.get("/locate-iss", async (c) => {
 });
 
 // ROUTE 3: Load Cargo into the Vault
+
 app.get("/load-cargo", (c) => {
   // Check the URL query parameter for an item name, or default to Space Biscuits
   const cargoItem = c.req.query("item") || "Space Biscuits";
@@ -590,13 +680,13 @@ app.get("/load-cargo", (c) => {
     }
 
     // Append new item
-    cargo.push({item: cargoItem, timestamp: new Date().toISOString()});
+    cargo.push({ item: cargoItem, timestamp: new Date().toISOString() });
 
     // Write back
     vault.setJson("manifest", cargo);
   } catch (error) {
     // Key doesn't exist yet, create new array
-    vault.setJson("manifest", [{item: cargoItem, timestamp: new Date().toISOString()}]);
+    vault.setJson("manifest", [{ item: cargoItem, timestamp: new Date().toISOString() }]);
   }
 
   return c.text(
@@ -626,7 +716,169 @@ app.get("/check-vault", (c) => {
   }
 });
 
+// ROUTE 5: Plan Trip to ISS (with Flight Computer Integration)
+app.get("/plan-trip-to-iss", async (c) => {
+  try {
+    const response = await fetch("http://api.open-notify.org/iss-now.json");
+    const data = (await response.json()) as any;
+
+    const flightComputerResponse = await fetch(
+      "http://flight-computer.spin.internal",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          iss: {
+            latitude: parseFloat(data.iss_position.latitude),
+            longitude: parseFloat(data.iss_position.longitude),
+          },
+        }),
+      },
+    );
+
+    // Check if response is ok
+    if (!flightComputerResponse.ok) {
+      return c.text(`⚠️ Flight Computer error: ${flightComputerResponse.status}`, 500);
+    }
+
+    // Check if response has content
+    const responseText = await flightComputerResponse.text();
+    if (!responseText) {
+      return c.text("⚠️ Flight Computer returned empty response", 500);
+    }
+
+    const missionReport = JSON.parse(responseText);
+
+    return c.json({
+      status: "🚀 Mission Planning Complete",
+      iss_location: data.iss_position,
+      flight_computer_report: missionReport,
+      message: "Flight Computer has calculated the optimal intercept course!",
+    });
+  } catch (error) {
+    return c.text(`💥 Mission planning failed! Error: ${error}`, 500);
+  }
+});
+
 app.fire();
+```
+
+### `lib.rs` Complete Final Blueprint
+
+```rust
+use spin_sdk::http::{IntoResponse, Request, Response};
+use spin_sdk::http_component;
+use serde::{Deserialize, Serialize};
+
+// Fixed spaceship position (docked at Kennedy Space Center)
+const SPACESHIP_LATITUDE: f64 = 28.5729;
+const SPACESHIP_LONGITUDE: f64 = -80.6490;
+
+// Simple fuel consumption rate (fuel units per km)
+const FUEL_RATE: f64 = 0.42;
+
+/// Request payload from Mission Control
+#[derive(Deserialize)]
+struct IssRequest {
+    iss: Coordinates,
+}
+
+/// ISS coordinates
+#[derive(Deserialize)]
+struct Coordinates {
+    latitude: f64,
+    longitude: f64,
+}
+
+/// Mission report response
+#[derive(Serialize)]
+struct MissionReport {
+    #[serde(rename = "distanceKm")]
+    distance_km: f64,
+    #[serde(rename = "fuelRequired")]
+    fuel_required: f64,
+    status: String,
+}
+
+/// Flight Computer - handles navigation calculations
+#[http_component]
+fn handle_flight_computer(req: Request) -> anyhow::Result<impl IntoResponse> {
+    // Parse the incoming ISS coordinates from Mission Control
+    let body = req.body();
+    let iss_request: IssRequest = serde_json::from_slice(body)?;
+
+    // Calculate distance from our fixed spaceship position to the ISS
+    let distance = calculate_distance(
+        SPACESHIP_LATITUDE,
+        SPACESHIP_LONGITUDE,
+        iss_request.iss.latitude,
+        iss_request.iss.longitude,
+    );
+
+    // Calculate fuel required for the journey
+    let fuel_required = distance * FUEL_RATE;
+
+    // Prepare the mission report
+    let report = MissionReport {
+        distance_km: (distance * 10.0).round() / 10.0,
+        fuel_required: (fuel_required * 10.0).round() / 10.0,
+        status: "INTERCEPT COURSE READY".to_string(),
+    };
+
+    // Return the mission report as JSON
+    Ok(Response::builder()
+        .status(200)
+        .header("content-type", "application/json")
+        .body(serde_json::to_string(&report)?)
+        .build())
+}
+
+/// Calculate distance using the Haversine formula
+fn calculate_distance(lat1: f64, lon1: f64, lat2: f64, lon2: f64) -> f64 {
+    const EARTH_RADIUS_KM: f64 = 6371.0;
+
+    let lat1_rad = lat1.to_radians();
+    let lat2_rad = lat2.to_radians();
+    let delta_lat = (lat2 - lat1).to_radians();
+    let delta_lon = (lon2 - lon1).to_radians();
+
+    let a = (delta_lat / 2.0).sin().powi(2)
+        + lat1_rad.cos() * lat2_rad.cos() * (delta_lon / 2.0).sin().powi(2);
+    let c = 2.0 * a.sqrt().atan2((1.0 - a).sqrt());
+
+    EARTH_RADIUS_KM * c
+}
+```
+
+### `package.json` Complete Final Blueprint
+
+```json
+{
+  "name": "test-space-portal",
+  "version": "1.0.0",
+  "description": "Testing the Lab",
+  "main": "index.js",
+  "scripts": {
+    "build": "node build.mjs && mkdirp dist && j2w -i build/bundle.js --initLocation http://test-space-portal.localhost -o dist/test-space-portal.wasm",
+    "build:debug": "node build.mjs && mkdirp dist && j2w -d -i build/bundle.js --initLocation http://test-space-portal.localhost -o dist/test-space-portal.wasm",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "esbuild": "^0.25.8",
+    "mkdirp": "^3.0.1",
+    "ts-loader": "^9.4.1",
+    "typescript": "^4.8.4"
+  },
+  "dependencies": {
+    "@spinframework/build-tools": "^1.0.4",
+    "@spinframework/spin-kv": "^1.0.1",
+    "@spinframework/wasi-http-proxy": "^1.0.0",
+    "hono": "^4.7.4"
+  }
+}
 ```
 
 ---
@@ -650,7 +902,7 @@ npm install hono @fermyon/spin-sdk
 **Solution:** Make sure your `spin.toml` has the full URL format with scheme and port:
 
 ```toml
-allowed_outbound_hosts = ["http://api.open-notify.org:80"]
+allowed_outbound_hosts = ["http://api.open-notify.org:80", "http://flight-computer.spin.internal"]
 ```
 
 Also verify the fetch URL in your code uses `http://` not `https://`:
@@ -708,3 +960,18 @@ Congratulations, Cadet! By completing this lab, you have:
 ✅ Deployed code that runs globally on Akamai's distributed edge network
 
 You're now ready to build your own edge applications! 🚀
+
+## 🔧 Tips
+
+1. Build and start in one command:
+
+   ```bash
+   spin up --build
+   ```
+
+2. Stop spin, clear the KV database and start the application again:
+
+   ```bash
+   pkill -f "spin up"; sleep 1; rm -f .spin/sqlite_key_value.db; spin up --build
+   ```
+

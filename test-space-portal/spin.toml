@@ -10,14 +10,28 @@ version = "0.1.0"
 route = "/..."
 component = "test-space-portal"
 
+
 [component.test-space-portal]
 source = "dist/test-space-portal.wasm"
 exclude_files = ["**/node_modules"]
 allowed_outbound_hosts = [
     # "tcp://127.0.0.1:*", # Uncomment this line to while using the StarlingMonkey Debugger
-    "http://api.open-notify.org:80"
+    "http://api.open-notify.org:80",
+    "http://flight-computer.spin.internal"
 ]
 key_value_stores = ["default"]
 [component.test-space-portal.build]
 command = ["npm install", "npm run build"]
 watch = ["src/**/*.ts"]
+
+[[trigger.http]]
+route = { private = true }
+component = "flight-computer"
+
+[component.flight-computer]
+source = "flight-computer/target/wasm32-wasip1/release/flight_computer.wasm"
+allowed_outbound_hosts = []
+[component.flight-computer.build]
+command = "cargo build --target wasm32-wasip1 --release"
+workdir = "flight-computer"
+watch = ["src/**/*.rs", "Cargo.toml"]
