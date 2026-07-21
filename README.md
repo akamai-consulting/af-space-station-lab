@@ -19,7 +19,7 @@ You will use **TypeScript** to build a command portal for a futuristic space sta
 
 Before writing our custom control systems, we need to generate the basic structure of our space application.
 
-### 📋 Participant Instructions
+### 📋 Phase 1: Participant Instructions
 
 1. Open your computer's terminal or command prompt application.
 2. Run the following command to create a brand new TypeScript project layout from a template:
@@ -52,7 +52,7 @@ Look at the files inside your project directory. As a beginner, you only need to
 
 Right now, your application contains templates. Let's configure it to greet any incoming astronauts arriving at the docking bay.
 
-### 📋 Participant Instructions
+### 📋 Phase 2: Participant Instructions
 
 1. Open the `src/index.ts` file in your editor.
 2. Erase everything inside it so you start completely fresh.
@@ -96,7 +96,7 @@ A good space station needs to communicate with external data streams. We are goi
 
 To achieve this, we request data from an external tracking API (`api.open-notify.org`). However, Akamai Functions are strictly locked down by default for security. We must give our application explicit permission to talk to the outside universe.
 
-### 📋 Participant Instructions
+### 📋 Phase 3: Participant Instructions
 
 1. Open your `spin.toml` file.
 2. Find the block that reads `[component.space-portal]`.
@@ -161,7 +161,7 @@ When cargo ships deliver provisions (like space cookies or reactor fuel), we nee
 
 Just like before, we have to grant our component structural permission to use the storage room.
 
-### 📋 Participant Instructions
+### 📋 Phase 4: Participant Instructions
 
 1. Open your `spin.toml` file again.
 2. Directly below your `allowed_outbound_hosts` line, add this line to initialize access to the default storage vault:
@@ -176,7 +176,7 @@ Just like before, we have to grant our component structural permission to use th
     npm install @spinframework/spin-kv
     ```
 
-  Notice that the dependencies have updated to look like:
+   Notice that the dependencies have updated to look like:
 
     ```json
     "dependencies": {
@@ -251,9 +251,9 @@ Just like before, we have to grant our component structural permission to use th
     curl 'http://127.0.0.1:3000/load-cargo?item=Quantum-Fuel'
     ```
 
-  Expected output:
+   Expected output:
 
-    ```
+    ```text
     📦 Successfully locked [Quantum-Fuel] inside the ship's storage vault!
     ```
 
@@ -261,7 +261,7 @@ Just like before, we have to grant our component structural permission to use th
     curl http://127.0.0.1:3000/check-vault
     ```
 
-  Expected output:
+   Expected output:
 
    ```json
    {
@@ -434,7 +434,7 @@ The two components communicate using **Local Service Chaining**—they call each
 
 Your space code is fully assembled! Now it is time to boot up the systems, test it inside your local terminal simulator, and launch it live to Akamai's global edge network.
 
-### 📋 Participant Instructions
+### 📋 Phase 6: Participant Instructions
 
 1. In your terminal, run this command to build and compile your TypeScript code into a high-performance WebAssembly module:
 
