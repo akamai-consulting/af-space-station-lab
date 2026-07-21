@@ -187,18 +187,18 @@ Just like before, we have to grant our component structural permission to use th
   }
   ```
 
-1. Return to `src/index.ts` and lets import our Kv
+4. Return to `src/index.ts` and lets import our Kv
 
   ```typescript
   import * as Kv from "@spinframework/spin-kv";
   ```
 
-1. Still in `src/index.ts`. Let's add two final routes right above the `app.fire()` statement to **store** cargo and **inspect** what is saved inside the vault:
+5. Still in `src/index.ts`. Let's add two final routes right above the `app.fire()` statement to **store** cargo and **inspect** what is saved inside the vault:
 
    ```typescript
    // ROUTE 3: Load Cargo into the Vault
 
-  app.get("/load-cargo", (c) => {
+    app.get("/load-cargo", (c) => {
     // Check the URL query parameter for an item name, or default to Space Biscuits
     const cargoItem = c.req.query("item") || "Space Biscuits";
 
