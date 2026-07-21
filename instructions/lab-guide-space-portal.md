@@ -31,11 +31,18 @@ Before writing our mission control systems, we need to generate the basic struct
    HTTP path: /...
    HTTP Router: hono --> IMPORTANT!
    ```
-3. Move into your new project directory:
+3. select http-empty
+4. Name the application space-portal
+5. Description: "A beginner friendly Akamai Functions Space Lab"
+6. Move into your new project directory:
    ```bash
    cd space-portal
    ```
-4. Open this project folder inside your preferred code editor (such as Visual Studio Code).
+7. Open this project folder inside your preferred code editor (such as Visual Studio Code).
+
+### Empty project
+
+
 
 ### 🔍 Understanding the Blueprint
 
