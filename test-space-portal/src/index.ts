@@ -30,4 +30,31 @@ app.get("/locate-iss", async (c) => {
   }
 });
 
+// ROUTE 3: Load Cargo into the Vault
+
+ app.get("/load-cargo", (c) => {
+ // Check the URL query parameter for an item name, or default to Space Biscuits
+ const cargoItem = c.req.query("item") || "Space Biscuits";
+
+ // Open the ship's secure vault
+ const vault = Kv.openDefault();
+
+ // Read existing cargo
+ let cargo = vault.getJson("manifest");
+
+ // Initialize as array if it doesn't exist or isn't an array
+ if (!Array.isArray(cargo)) {
+   cargo = [];
+ }
+
+ // Appen new item
+ cargo.push({item: cargoItem, timestamp: new Date().toISOString()});
+
+ // Write back
+ vault.setJson("manifest", cargo);
+
+ return c.text(
+   `📦 Successfully locked [${cargoItem}] inside the ship's storage vault!`,
+ );
+
 app.fire();
