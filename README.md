@@ -76,17 +76,17 @@ Right now, your application contains templates. Let's configure it to greet any 
 4. Save your file.
 5. Test
 
-  ```bash
-  spin build
-  spin up
-  curl 'http://127.0.0.1:3000'
-  ```
+   ```bash
+   spin build
+   spin up
+   curl 'http://127.0.0.1:3000'
+   ```
 
-  Expected output:
+   Expected output:
 
-  ```
-  🛰️ Welcome to the Intergalactic Edge Space Station, Cadet!
-  ```
+   ```
+   🛰️ Welcome to the Intergalactic Edge Space Station, Cadet!
+   ```
 
 ---
 
@@ -134,24 +134,24 @@ To achieve this, we request data from an external tracking API (`api.open-notify
 5. Save your updates.
 6. Test
 
-  ```bash
-  spin build
-  spin up
-  curl 'http://127.0.0.1:3000/locate-iss'
-  ```
+   ```bash
+   spin build
+   spin up
+   curl 'http://127.0.0.1:3000/locate-iss'
+   ```
 
-  Expected output:
+   Expected output:
 
-  ```json
-  {
-    "status": "📡 Connection Stable!",
-    "message": "Probe intercepted the real-world ISS location!",
-    "coordinates": {
-      "longitude": "-41.2690",
-      "latitude": "-39.4434"
-    }
-  }
-  ```
+   ```json
+   {
+     "status": "📡 Connection Stable!",
+     "message": "Probe intercepted the real-world ISS location!",
+     "coordinates": {
+       "longitude": "-41.2690",
+       "latitude": "-39.4434"
+     }
+   }
+   ```
 
 ---
 
@@ -172,26 +172,26 @@ Just like before, we have to grant our component structural permission to use th
 
 3. For the kv to work it needs to be included as a dependency. At this stage package.json doesn't include it. Make sure you are in the space-portal directory, your application, and run:
 
-  ```bash
+    ```bash
     npm install @spinframework/spin-kv
-  ```
+    ```
 
   Notice that the dependencies have updated to look like:
 
-  ```json
-  "dependencies": {
-    "@spinframework/build-tools": "^1.0.4",
-    "@spinframework/spin-kv": "^1.0.1",
-    "@spinframework/wasi-http-proxy": "^1.0.0",
-    "hono": "^4.7.4"
-  }
-  ```
+    ```json
+    "dependencies": {
+        "@spinframework/build-tools": "^1.0.4",
+        "@spinframework/spin-kv": "^1.0.1",
+        "@spinframework/wasi-http-proxy": "^1.0.0",
+        "hono": "^4.7.4"
+    }
+    ```
 
 4. Return to `src/index.ts` and lets import our Kv
 
-  ```typescript
-  import * as Kv from "@spinframework/spin-kv";
-  ```
+   ```typescript
+   import * as Kv from "@spinframework/spin-kv";
+   ```
 
 5. Still in `src/index.ts`. Let's add two final routes right above the `app.fire()` statement to **store** cargo and **inspect** what is saved inside the vault:
 
@@ -245,33 +245,33 @@ Just like before, we have to grant our component structural permission to use th
 6. Save your files.
 7. Test
 
-  ```bash
-  spin build
-  spin up
-  curl 'http://127.0.0.1:3000/load-cargo?item=Quantum-Fuel'
-  ```
+    ```bash
+    spin build
+    spin up
+    curl 'http://127.0.0.1:3000/load-cargo?item=Quantum-Fuel'
+    ```
 
   Expected output:
 
-  ```
-  📦 Successfully locked [Quantum-Fuel] inside the ship's storage vault!
-  ```
+    ```
+    📦 Successfully locked [Quantum-Fuel] inside the ship's storage vault!
+    ```
 
-  ```bash
-  curl http://127.0.0.1:3000/check-vault
-  ```
+    ```bash
+    curl http://127.0.0.1:3000/check-vault
+    ```
 
   Expected output:
 
-  ```json
-  {
-    "vault_status":"Secured",
-    "current_inventory": {
-      "item":"Quantum-Fuel",
-      "timestamp":"2026-07-14T15:31:02.879Z"
-    }
-  }
-  ```
+   ```json
+   {
+     "vault_status":"Secured",
+     "current_inventory": {
+       "item":"Quantum-Fuel",
+       "timestamp":"2026-07-14T15:31:02.879Z"
+     }
+   }
+   ```
 
 ---
 
@@ -314,10 +314,10 @@ The two components communicate using **Local Service Chaining**—they call each
    ```bash
    spin add -t http-rust flight-computer
 
-  Description:
-  HTTP path: /...
+   Description:
+   HTTP path: /...
 
-  ```
+   ```
 3. This creates a new `flight-computer/` directory with Rust code inside.
 
 #### Step 2: Implement the Flight Computer Logic
@@ -334,11 +334,11 @@ The two components communicate using **Local Service Chaining**—they call each
 
 2. Edit `spin.toml` to make the route to the flight-computer private, so the route can only be internally accessible.
 
-  ```toml
-  [[trigger.http]]
-  route = { private = true }
-  component = "flight-computer"
-  ```
+   ```toml
+   [[trigger.http]]
+   route = { private = true }
+   component = "flight-computer"
+   ```
 3. 
 
 4. Open `flight-computer/src/lib.rs` and replace all the code with our navigation logic:
