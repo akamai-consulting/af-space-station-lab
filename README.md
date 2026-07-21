@@ -240,7 +240,7 @@ Just like before, we have to grant our component structural permission to use th
             current_inventory: currentCargo,
         });
     });
-  ```
+    ```
 
 6. Save your files.
 7. Test
