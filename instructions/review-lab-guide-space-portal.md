@@ -187,54 +187,64 @@ Just like before, we have to grant our component structural permission to use th
   }
   ```
 
-4. Return to `src/index.ts` and lets import our Kv
+1. Return to `src/index.ts` and lets import our Kv
 
   ```typescript
   import * as Kv from "@spinframework/spin-kv";
   ```
 
-5. Still in `src/index.ts`. Let's add two final routes right above the `app.fire()` statement to **store** cargo and **inspect** what is saved inside the vault:
+1. Still in `src/index.ts`. Let's add two final routes right above the `app.fire()` statement to **store** cargo and **inspect** what is saved inside the vault:
 
    ```typescript
    // ROUTE 3: Load Cargo into the Vault
-   app.get("/load-cargo", (c) => {
-     // Check the URL query parameter for an item name, or default to Space Biscuits
-     const cargoItem = c.req.query("item") || "Space Biscuits";
 
-     // Open the ship's secure vault
-     const vault = Kv.openDefault();
+  app.get("/load-cargo", (c) => {
+    // Check the URL query parameter for an item name, or default to Space Biscuits
+    const cargoItem = c.req.query("item") || "Space Biscuits";
 
-     // Save our cargo details safely as a simple object
-     vault.setJson("manifest", {
-       item: cargoItem,
-       timestamp: new Date().toISOString(),
-     });
+    // Open the ship's secure vault
+    const vault = Kv.openDefault();
 
-     return c.text(
-       `📦 Successfully locked [${cargoItem}] inside the ship's storage vault!`,
-     );
-   });
+    // Read existing cargo
+    let cargo = vault.getJson("manifest");
 
-   // ROUTE 4: Inspect the Vault
-   app.get("/check-vault", (c) => {
-     const vault = Kv.openDefault();
+    // Initialize as array if it doesn't exist or isn't an array
+    if (!Array.isArray(cargo)) {
+      cargo = [];
+    }
+  
+    // Appen new item
+    cargo.push({item: cargoItem, timestamp: new Date().toISOString()});
 
-     // Pull the item data back out of the vault
-     const currentCargo = vault.getJson("manifest");
+    // Write back
+    vault.setJson("manifest", cargo);
 
-     if (!currentCargo) {
-       return c.text("⚠️ Warning! The storage vault is completely empty!");
-     }
+    return c.text(
+      `📦 Successfully locked [${cargoItem}] inside the ship's storage vault!`,
+    );
+  });
 
-     return c.json({
-       vault_status: "Secured",
-       current_inventory: currentCargo,
-     });
-   });
-   ```
+  // ROUTE 4: Inspect the Vault
+  app.get("/check-vault", (c) => {
+    const vault = Kv.openDefault();
 
-2. Save your files.
-3. Test
+    // Pull the item data back out of the vault
+    const currentCargo = vault.getJson("manifest");
+
+    if (!currentCargo) {
+      return c.text("⚠️ Warning! The storage vault is completely empty!");
+    }
+
+    return c.json({
+      vault_status: "Secured",
+      current_inventory: currentCargo,
+    });
+  });
+
+  ```
+
+6. Save your files.
+7. Test
 
   ```bash
   spin build
@@ -266,7 +276,162 @@ Just like before, we have to grant our component structural permission to use th
 
 ---
 
-## 🚀 Phase 5: Launching into Orbit (Testing & Deploying)
+## 🤖 Phase 5: Installing the Flight Computer (Multi-Component Architecture with Rust)
+
+Now we're going to enhance our cargo spaceship by adding a specialized **Flight Computer** component written in **Rust**. This demonstrates one of the most powerful features of Spin: building **multi-component applications** where different parts of your system are written in different languages, each optimized for their specific task.
+
+Think of it this way: **Mission Control** (TypeScript) handles communication, cargo management, and orchestration—things that involve a lot of API calls and data manipulation. The **Flight Computer** (Rust) handles precision navigation calculations, where type safety, performance, and reliability are critical for the crew's safety.
+
+### Why Two Languages?
+
+**Mission Control (TypeScript)**:
+
+- Excellent for HTTP handling and API orchestration
+- Great for managing cargo manifests and external communications
+- Quick to write and iterate on business logic
+
+**Flight Computer (Rust)**:
+
+- Perfect for mission-critical navigation calculations
+- Strong type system prevents errors that could endanger the crew
+- Blazing fast performance for real-time course corrections
+- Memory safety guarantees for long-duration missions
+
+The two components communicate using **Local Service Chaining**—they call each other in-memory without network overhead, just like integrated systems on a real spacecraft!
+
+## 📋 Participant Instructions
+
+#### Step 1: Create the Rust Component
+
+1. Open your terminal in the project directory.
+2. Run this command to create a new Rust HTTP component:
+
+   ```bash
+   spin add -t http-rust flight-computer --accept-defaults
+   ```
+
+   or
+
+   ```bash
+   spin add -t http-rust flight-computer
+
+  Description:
+  HTTP path: /...
+
+  ```
+3. This creates a new `flight-computer/` directory with Rust code inside.
+
+#### Step 2: Implement the Flight Computer Logic
+
+1. Open `flight-computer/Cargo.toml` and add the dependencies we need for JSON handling:
+
+   ```toml
+   [dependencies]
+   anyhow = "1"
+   spin-sdk = "5.0.0"
+   serde = { version = "1.0", features = ["derive"] }
+   serde_json = "1.0"
+   ```
+
+2. Edit `spin.toml` to make the route to the flight-computer private, so the route can only be internally accessible.
+
+  ```toml
+  [[trigger.http]]
+  route = { private = true }
+  component = "flight-computer"
+  ```
+3. 
+
+4. Open `flight-computer/src/lib.rs` and replace all the code with our navigation logic:
+
+   ```rust
+   use spin_sdk::http::{IntoResponse, Request, Response};
+   use spin_sdk::http_component;
+   use serde::{Deserialize, Serialize};
+
+   // Fixed spaceship position (docked at Kennedy Space Center)
+   const SPACESHIP_LATITUDE: f64 = 28.5729;
+   const SPACESHIP_LONGITUDE: f64 = -80.6490;
+
+   // Simple fuel consumption rate (fuel units per km)
+   const FUEL_RATE: f64 = 0.42;
+
+   /// Request payload from Mission Control
+   #[derive(Deserialize)]
+   struct IssRequest {
+       iss: Coordinates,
+   }
+
+   /// ISS coordinates
+   #[derive(Deserialize)]
+   struct Coordinates {
+       latitude: f64,
+       longitude: f64,
+   }
+
+   /// Mission report response
+   #[derive(Serialize)]
+   struct MissionReport {
+       #[serde(rename = "distanceKm")]
+       distance_km: f64,
+       #[serde(rename = "fuelRequired")]
+       fuel_required: f64,
+       status: String,
+   }
+
+   /// Flight Computer - handles navigation calculations
+   #[http_component]
+   fn handle_flight_computer(req: Request) -> anyhow::Result<impl IntoResponse> {
+       // Parse the incoming ISS coordinates from Mission Control
+       let body = req.body();
+       let iss_request: IssRequest = serde_json::from_slice(body)?;
+
+       // Calculate distance from our fixed spaceship position to the ISS
+       let distance = calculate_distance(
+           SPACESHIP_LATITUDE,
+           SPACESHIP_LONGITUDE,
+           iss_request.iss.latitude,
+           iss_request.iss.longitude,
+       );
+
+       // Calculate fuel required for the journey
+       let fuel_required = distance * FUEL_RATE;
+
+       // Prepare the mission report
+       let report = MissionReport {
+           distance_km: (distance * 10.0).round() / 10.0,
+           fuel_required: (fuel_required * 10.0).round() / 10.0,
+           status: "INTERCEPT COURSE READY".to_string(),
+       };
+
+       // Return the mission report as JSON
+       Ok(Response::builder()
+           .status(200)
+           .header("content-type", "application/json")
+           .body(serde_json::to_string(&report)?)
+           .build())
+   }
+
+   /// Calculate distance using the Haversine formula
+   fn calculate_distance(lat1: f64, lon1: f64, lat2: f64, lon2: f64) -> f64 {
+       const EARTH_RADIUS_KM: f64 = 6371.0;
+
+       let lat1_rad = lat1.to_radians();
+       let lat2_rad = lat2.to_radians();
+       let delta_lat = (lat2 - lat1).to_radians();
+       let delta_lon = (lon2 - lon1).to_radians();
+
+       let a = (delta_lat / 2.0).sin().powi(2)
+           + lat1_rad.cos() * lat2_rad.cos() * (delta_lon / 2.0).sin().powi(2);
+       let c = 2.0 * a.sqrt().atan2((1.0 - a).sqrt());
+
+       EARTH_RADIUS_KM * c
+   }
+   ```
+
+---
+
+## 🚀 Phase 6: Launching into Orbit (Testing & Deploying)
 
 Your space code is fully assembled! Now it is time to boot up the systems, test it inside your local terminal simulator, and launch it live to Akamai's global edge network.
 
@@ -307,10 +472,10 @@ If a student runs into a syntax error, structural bug, or misconfigures a setup 
 spin_manifest_version = "2"
 
 [application]
+authors = ["<author>"]
+description = "A beginner friendly Akamai Functions Space Lab"
 name = "space-portal"
 version = "0.1.0"
-authors = ["Astronaut Cadet"]
-description = "A beginner friendly Akamai Functions Space Lab"
 
 [[trigger.http]]
 route = "/..."
@@ -318,31 +483,70 @@ component = "space-portal"
 
 [component.space-portal]
 source = "dist/space-portal.wasm"
-exclude_files = ["src/**/*.ts", "macro/**/*.ts", "node_modules/**"]
-allowed_outbound_hosts = ["http://api.open-notify.org:80"]
+exclude_files = ["**/node_modules"]
+allowed_outbound_hosts = [
+    "http://api.open-notify.org:80"
+    ]
 key_value_stores = ["default"]
-
 [component.space-portal.build]
-command = "npm run build"
-watch = ["src/**/*.ts", "package.json"]
+command = ["npm install", "npm run build"]
+watch = ["src/**/*.ts"]
+
+[[trigger.http]]
+route = { private = true }
+component = "flight-computer"
+
+[component.flight-computer]
+source = "flight-computer/target/wasm32-wasip1/release/flight_computer.wasm"
+allowed_outbound_hosts = []
+[component.flight-computer.build]
+command = "cargo build --target wasm32-wasip1 --release"
+workdir = "flight-computer"
+watch = ["src/**/*.rs", "Cargo.toml"]
+```
+
+### `cargo.toml` Complete Final Blueprint
+
+```toml
+[package]
+name = "flight-computer"
+authors = ["<author>"]
+description = ""
+version = "0.1.0"
+rust-version = "1.78"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+anyhow = "1"
+spin-sdk = "5.2.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[workspace]
 ```
 
 ### `src/index.ts` Complete Final Code
 
 ```typescript
 import { Hono } from "hono";
-import { Kv } from "@fermyon/spin-sdk";
+import * as Kv from "@spinframework/spin-kv";
 
 const app = new Hono();
 
-// ROUTE 1: Welcome Greeting
+// ROUTE 1: The Space Station Docking Bay
 app.get("/", (c) => {
-  return c.text("🛰️ Welcome to the Intergalactic Edge Space Station, Cadet!");
+  return c.text(
+    "🛰️ Welcome to the Intergalactic Edge Space Station, Cadet!",
+  );
 });
 
-// ROUTE 2: Fetching External Space Probe Data
+// ROUTE 2: Locate the ISS
 app.get("/locate-iss", async (c) => {
   try {
+    // Fire our data probe to Earth
     const response = await fetch("http://api.open-notify.org/iss-now.json");
     const data = (await response.json()) as any;
 
@@ -352,28 +556,45 @@ app.get("/locate-iss", async (c) => {
       coordinates: data.iss_position,
     });
   } catch (error) {
-    return c.text("💥 Space debris blocked our probe! Try again later.", 500);
+    return c.text(
+      "💥 Space debris blocked our probe! Try again later.",
+      500,
+    );
   }
 });
 
-// ROUTE 3: Saving Information to the Key-Value Vault
+// ROUTE 3: Load Cargo into the Vault
 app.get("/load-cargo", (c) => {
+  // Check the URL query parameter for an item name, or default to Space Biscuits
   const cargoItem = c.req.query("item") || "Space Biscuits";
+
+  // Open the ship's secure vault
   const vault = Kv.openDefault();
 
-  vault.setJson("manifest", {
-    item: cargoItem,
-    timestamp: new Date().toISOString(),
-  });
+  // Read existing cargo
+  let cargo = vault.getJson("manifest");
+
+  // Initialize as array if it doesn't exist or isn't an array
+  if (!Array.isArray(cargo)) {
+    cargo = [];
+  }
+  
+  // Appen new item
+  cargo.push({item: cargoItem, timestamp: new Date().toISOString()});
+
+  // Write back
+  vault.setJson("manifest", cargo);
 
   return c.text(
     `📦 Successfully locked [${cargoItem}] inside the ship's storage vault!`,
   );
 });
 
-// ROUTE 4: Reading Information from the Key-Value Vault
+// ROUTE 4: Inspect the Vault
 app.get("/check-vault", (c) => {
   const vault = Kv.openDefault();
+
+  // Pull the item data back out of the vault
   const currentCargo = vault.getJson("manifest");
 
   if (!currentCargo) {
