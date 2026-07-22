@@ -442,7 +442,7 @@ The two components communicate using **Local Service Chaining**—they call each
    }
   ```
 
-4. For the correct implementation, we would replace ROUTE 2 with a new route that uses the `flight-computer` component. In this case we will a new route, so add the following code to the `index.ts` of the `space-portal` bust above `fire(app)`.
+4. Lets add a new route, by inserting the following code to the `index.ts` of the `space-portal` just above `fire(app)`.
 
   ```typescript
     // ROUTE 5: Plan Trip to ISS (with Flight Computer Integration)
