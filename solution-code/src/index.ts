@@ -1,7 +1,11 @@
-import { Hono } from "hono";
+// For Hono documentation refer to https://hono.dev/docs/
+import { Hono } from 'hono';
+import { fire } from 'hono/service-worker';
+import type { Context, Next } from 'hono';
+import { logger } from 'hono/logger';
 import * as Kv from "@spinframework/spin-kv";
 
-const app = new Hono();
+let app = new Hono();
 
 // ROUTE 1: The Space Station Docking Bay
 app.get("/", (c) => {
@@ -129,4 +133,4 @@ app.get("/plan-trip-to-iss", async (c) => {
   }
 });
 
-app.fire();
+fire(app);  

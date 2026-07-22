@@ -58,20 +58,23 @@ Right now, your application contains templates. Let's configure it to greet any 
 2. Erase everything inside it so you start completely fresh.
 3. Paste the following code block to establish **Hono**, a modern routing tool that maps custom URLs to blocks of executable code:
 
-   ```typescript
-   import { Hono } from "hono";
+  ```typescript
+  import { Hono } from 'hono';
+  import { fire } from 'hono/service-worker';
+  import type { Context, Next } from 'hono';
+  import { logger } from 'hono/logger';
 
-   const app = new Hono();
+  let app = new Hono();
 
-   // ROUTE 1: The Space Station Docking Bay
-   app.get("/", (c) => {
-     return c.text(
-       "🛰️ Welcome to the Intergalactic Edge Space Station, Cadet!",
-     );
-   });
+  // ROUTE 1: The Space Station Docking Bay
+  app.get("/", (c) => {
+    return c.text(
+      "🛰️ Welcome to the Intergalactic Edge Space Station, Cadet!",
+    );
+  });
 
-   app.fire();
-   ```
+  fire(app);
+  ```
 
 4. Save your file.
 5. Test
@@ -107,7 +110,7 @@ To achieve this, we request data from an external tracking API (`api.open-notify
    ```
 
    > **Note:** Akamai Functions require the full URL format including the scheme (http:// or https://) and port number for security. We use HTTP (port 80) because this particular API doesn't support HTTPS connections.
-4. Go back to `src/index.ts`. Right above the `app.fire()` line, insert your second route code:
+4. Go back to `src/index.ts`. Right above the `fire(app)` line, insert your second route code:
 
    ```typescript
    // ROUTE 2: Locate the ISS
@@ -193,7 +196,7 @@ Just like before, we have to grant our component structural permission to use th
    import * as Kv from "@spinframework/spin-kv";
    ```
 
-5. Still in `src/index.ts`. Let's add two final routes right above the `app.fire()` statement to **store** cargo and **inspect** what is saved inside the vault:
+5. Still in `src/index.ts`. Let's add two final routes right above the `fire(app)` statement to **store** cargo and **inspect** what is saved inside the vault:
 
    ```typescript
    // ROUTE 3: Load Cargo into the Vault
@@ -354,7 +357,7 @@ The two components communicate using **Local Service Chaining**—they call each
 
 3. Open `flight-computer/src/lib.rs` and replace all the code with our navigation logic:
 
-   ```rust
+  ```rust
    use spin_sdk::http::{IntoResponse, Request, Response};
    use spin_sdk::http_component;
    use serde::{Deserialize, Serialize};
@@ -437,28 +440,29 @@ The two components communicate using **Local Service Chaining**—they call each
 
        EARTH_RADIUS_KM * c
    }
-   ```
-4. For the correct implementation, we would replace ROUTE 2 with a new route that uses the `flight-computer` component. In this case we will a new route, so add the following code to the `index.ts` of the `space-portal` bust above *app.fire()*
+  ```
 
-    ```typescript
+4. For the correct implementation, we would replace ROUTE 2 with a new route that uses the `flight-computer` component. In this case we will a new route, so add the following code to the `index.ts` of the `space-portal` bust above `fire(app)`.
+
+  ```typescript
     // ROUTE 5: Plan Trip to ISS (with Flight Computer Integration)
     app.get("/plan-trip-to-iss", async (c) => {
-        try {
-            const response = await fetch("http://api.open-notify.org/iss-now.json");
-            const data = (await response.json()) as any;
+      try {
+        const response = await fetch("http://api.open-notify.org/iss-now.json");
+        const data = (await response.json()) as any;
 
-            const flightComputerResponse = await fetch(
-            "http://flight-computer.spin.internal",
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    iss: {
-                        latitude: parseFloat(data.iss_position.latitude),
-                        longitude: parseFloat(data.iss_position.longitude),
-                    },
-                }),
-            },
+        const flightComputerResponse = await fetch(
+          "http://flight-computer.spin.internal",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              iss: {
+                latitude: parseFloat(data.iss_position.latitude),
+                longitude: parseFloat(data.iss_position.longitude),
+              },
+            }),
+          },
         );
 
         // Check if response is ok
@@ -480,12 +484,11 @@ The two components communicate using **Local Service Chaining**—they call each
             flight_computer_report: missionReport,
             message: "Flight Computer has calculated the optimal intercept course!",
         });
-    } catch (error) {
+      } catch (error) {
         return c.text(`💥 Mission planning failed! Error: ${error}`, 500);
-    }
+      }
     });
-    ```
-
+  ```
 
 5. Add `http://flight-computer.spin.internal` to the *allowed_outbound_hosts*
 
@@ -625,11 +628,11 @@ const response = await fetch("http://api.open-notify.org/iss-now.json");
 
 Congratulations, Cadet! By completing this lab, you have:
 
-✅ Built a serverless application that runs on the edge using WebAssembly  
-✅ Created multiple HTTP routes using the Hono routing framework  
-✅ Made external HTTP requests to real-world APIs  
-✅ Stored and retrieved persistent data using Key-Value storage  
-✅ Learned how to configure security permissions for network access  
+✅ Built a serverless application that runs on the edge using WebAssembly
+✅ Created multiple HTTP routes using the Hono routing framework
+✅ Made external HTTP requests to real-world APIs
+✅ Stored and retrieved persistent data using Key-Value storage
+✅ Learned how to configure security permissions for network access
 ✅ Deployed code that runs globally on Akamai's distributed edge network
 
 You're now ready to build your own edge applications! 🚀
