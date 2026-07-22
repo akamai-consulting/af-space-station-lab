@@ -3,16 +3,16 @@ spin_manifest_version = 2
 [application]
 authors = ["Pedro Costa <pcosta@akamai.com>"]
 description = "Testing the Lab"
-name = "test-space-portal"
+name = "space-portal"
 version = "0.1.0"
 
 [[trigger.http]]
 route = "/..."
-component = "test-space-portal"
+component = "space-portal"
 
 
-[component.test-space-portal]
-source = "dist/test-space-portal.wasm"
+[component.space-portal]
+source = "dist/space-portal.wasm"
 exclude_files = ["**/node_modules"]
 allowed_outbound_hosts = [
     # "tcp://127.0.0.1:*", # Uncomment this line to while using the StarlingMonkey Debugger
@@ -20,7 +20,7 @@ allowed_outbound_hosts = [
     "http://flight-computer.spin.internal"
 ]
 key_value_stores = ["default"]
-[component.test-space-portal.build]
+[component.space-portal.build]
 command = ["npm install", "npm run build"]
 watch = ["src/**/*.ts"]
 

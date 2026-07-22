@@ -10,16 +10,16 @@ spin_manifest_version = 2
 [application]
 authors = ["Pedro Costa <pcosta@akamai.com>"]
 description = "Testing the Lab"
-name = "test-space-portal"
+name = space-portal"
 version = "0.1.0"
 
 [[trigger.http]]
 route = "/..."
-component = "test-space-portal"
+component = space-portal"
 
 
-[component.test-space-portal]
-source = "dist/test-space-portal.wasm"
+[component.space-portal]
+source = "dist/space-portal.wasm"
 exclude_files = ["**/node_modules"]
 allowed_outbound_hosts = [
     # "tcp://127.0.0.1:*", # Uncomment this line to while using the StarlingMonkey Debugger
@@ -27,7 +27,7 @@ allowed_outbound_hosts = [
     "http://flight-computer.spin.internal"
 ]
 key_value_stores = ["default"]
-[component.test-space-portal.build]
+[component.space-portal.build]
 command = ["npm install", "npm run build"]
 watch = ["src/**/*.ts"]
 
@@ -296,13 +296,13 @@ fn calculate_distance(lat1: f64, lon1: f64, lat2: f64, lon2: f64) -> f64 {
 
 ```json
 {
-  "name": "test-space-portal",
+  "name": "space-portal",
   "version": "1.0.0",
   "description": "Testing the Lab",
   "main": "index.js",
   "scripts": {
-    "build": "node build.mjs && mkdirp dist && j2w -i build/bundle.js --initLocation http://test-space-portal.localhost -o dist/test-space-portal.wasm",
-    "build:debug": "node build.mjs && mkdirp dist && j2w -d -i build/bundle.js --initLocation http://test-space-portal.localhost -o dist/test-space-portal.wasm",
+    "build": "node build.mjs && mkdirp dist && j2w -i build/bundle.js --initLocation http://space-portal.localhost -o dist/space-portal.wasm",
+    "build:debug": "node build.mjs && mkdirp dist && j2w -d -i build/bundle.js --initLocation http://space-portal.localhost -o dist/space-portal.wasm",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
