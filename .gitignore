@@ -1,6 +1,11 @@
+!solution-code/
 node_modules
 dist
 target
 .spin/
 build/
-test-space-portal/
+/test-space-portal/
+/space-portal/
+/instructions/
+.vscode/
+.DS_Store
