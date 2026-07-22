@@ -4,3 +4,7 @@ target
 .spin/
 build/
 test-space-portal/
+.spin/
+space-portal/
+instructions/
+solution-code/.vscode/
