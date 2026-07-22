@@ -3,3 +3,4 @@ dist
 target
 .spin/
 build/
+test-space-portal/
