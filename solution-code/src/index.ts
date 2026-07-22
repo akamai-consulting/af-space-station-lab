@@ -13,7 +13,7 @@ app.get("/", (c) => {
 // ROUTE 2: Locate the ISS
 app.get("/locate-iss", async (c) => {
   try {
-    // Fire our data probe to Earth
+    // Step 1: Fetch ISS position from external API
     const response = await fetch("http://api.open-notify.org/iss-now.json");
     const data = (await response.json()) as any;
 

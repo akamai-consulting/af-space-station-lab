@@ -10,12 +10,12 @@ spin_manifest_version = 2
 [application]
 authors = ["Pedro Costa <pcosta@akamai.com>"]
 description = "Testing the Lab"
-name = space-portal"
+name = "space-portal"
 version = "0.1.0"
 
 [[trigger.http]]
 route = "/..."
-component = space-portal"
+component = "space-portal"
 
 
 [component.space-portal]
