@@ -9,3 +9,5 @@ build/
 /instructions/
 .vscode/
 .DS_Store
+docs/
+IMPLEMENTATION_SUMMARY.md
