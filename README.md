@@ -559,6 +559,18 @@ Reiterating, when your application is ready you would:
 
 ---
 
+## Lab overview
+
+### Architecture
+
+![Architecture Diagram](diagrams/architecture.svg)
+
+### Routes
+
+![Routes Diagram](diagrams/routes.svg)
+
+---
+
 ## 🔧 Troubleshooting Guide
 
 ### Issue: "Could not resolve 'hono'" or "Could not resolve '@fermyon/spin-sdk'"
